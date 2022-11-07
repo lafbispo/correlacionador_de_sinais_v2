@@ -36,8 +36,7 @@ class AppWindow(Gtk.ApplicationWindow):
     progressBar: Gtk.ProgressBar = Gtk.Template.Child()  
     channelSwitch:  Gtk.ComboBox = Gtk.Template.Child()
     
-    
-    
+    stateRead = True
   
     
     
@@ -54,8 +53,17 @@ class AppWindow(Gtk.ApplicationWindow):
     
     @Gtk.Template.Callback()  
     def on_AppWindow_destroy(self, widget, *args):
+        self.eventStop.set()
         Gtk.main_quit()
         pass
+    
+    @Gtk.Template.Callback()
+    def on_lowBandScale_button_release_event(self, button, user_data,**_kwargs):
+        
+        self.lowBandfiltering_value = float(self.lowBandScale.get_value())
+              
+        
+        pass  
         
     
     

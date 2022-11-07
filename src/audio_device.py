@@ -7,7 +7,7 @@ import sounddevice as sd
 import sys
 import time
 import asyncio
-
+from scipy.signal import welch, butter,filtfilt, find_peaks, freqz, freqs
 
 
 def get_devices():
@@ -119,10 +119,10 @@ class AudioStream(AudioDevice):
                                        dtype=np.int16,**kwargs):
         loop = asyncio.get_event_loop()
         event = asyncio.Event()
-        
+        global buffer
         buffer = np.empty((buffersize, channels), dtype=dtype)
         await self.record_buffer(buffer)
-        print(len(buffer))
+        
         
         
     
@@ -130,8 +130,40 @@ class AudioStream(AudioDevice):
         loop = asyncio.get_event_loop()
         event = asyncio.Event()
         loop.run_until_complete(self.buffer_analysis_and_plot(buffersize))
-                       
+        return buffer
     
+    
+def butter_lowpass_filter(data, cutoff, fs, order, Xf):
+
+    nyq = fs * 0.5
+    normal_cutoff = cutoff / fs
+    # Get the filter coefficients 
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    w, h = freqz(b, a , Xf)
+    y = filtfilt(b, a, data)
+    return y, w, h
+
+def butter_highpass_filter(data, cutoff, fs, order, Xf):
+    
+    nyq = fs * 0.5
+    normal_cutoff = cutoff / fs
+    # Get the filter coefficients 
+    b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    w, h = freqz(b, a , Xf)
+    y = filtfilt(b, a, data)
+    return y, w, h
+
+def butter_bandpass_filter(data, cutoff, fs, order,Xf):
+    
+    nyq = fs * 0.5
+    normal_cutoff = [cutoff[0]/ fs + .001, abs(cutoff[1] / fs - .001)]
+    # Get the filter coefficients 
+    # print(normal_cutoff[0], normal_cutoff[1])
+    b, a = butter(order, normal_cutoff, btype='bandpass', analog=False)
+    w, h = freqz(b, a , Xf)
+    y = filtfilt(b, a, data)
+    return y,w,h
+    # pass
 
 
 
