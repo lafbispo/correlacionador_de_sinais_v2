@@ -204,8 +204,10 @@ class Analisador_de_sinaisApplication(Gtk.Application):
         line1, = axis.semilogx(Xf[:], np.zeros(blocksizeM//2)[:], 
                                animated = True, label = 'ch1' )
         
+        #axis2 = axis.twinx()
+        
         line2, = axis.semilogx(Xf[:], np.zeros(blocksizeM//2)[:], 
-                               animated = True, label = 'filtro' )
+                               animated = True, label = 'filtro' , color = 'r')
        
         axis.legend(loc ='center right', fontsize = 16, bbox_to_anchor=(1.25, 0.5))    
         fig.canvas.draw()   
@@ -237,6 +239,7 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                 
                 line2.set_xdata(Xf)
                 line2.set_ydata( np.zeros(blocksizeM//2)[:])
+                line2.set_visible(False)
                 
                 pass
             elif lowbandvalue >1 and highbandvalue <1:
@@ -247,6 +250,8 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                 buffer = y
                 line2.set_xdata(w)
                 line2.set_ydata(20 * np.log10(abs(h+1e-6)))
+                line2.set_visible(True)
+                
                 pass
                 
             elif highbandvalue >1 and  lowbandvalue<1:
@@ -257,13 +262,13 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                 buffer = y
                 line2.set_xdata(w)
                 line2.set_ydata(20 * np.log10(abs(h+1e-6)))
+                line2.set_visible(True)
                 pass
             else:
                 """filtro passa banda"""
                 cut_off1 = lowbandvalue/100*fs/2
                 cut_off2 = ((highbandvalue/100)/2 + .5)*fs
                 cutoff = [cut_off1, cut_off2]
-                # print(cutoff)
                 
                 order = 2
                 y, w, h = butter_bandpass_filter(buffer, cutoff, fs, order,Xf)                
@@ -271,6 +276,7 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                 buffer = y
                 line2.set_xdata(w)
                 line2.set_ydata(20 * np.log10(abs(h+1e-6)))
+                line2.set_visible(True)
                 pass
             
             
@@ -294,9 +300,7 @@ class Analisador_de_sinaisApplication(Gtk.Application):
             fig.canvas.draw()
             axis.draw_artist(line1)
             axis.draw_artist(line2)
-            fig.canvas.flush_events()
-            
-            
+            fig.canvas.flush_events()           
             
             if eventStop.is_set():
                 return False
