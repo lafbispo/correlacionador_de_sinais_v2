@@ -73,64 +73,11 @@ class AudioStream(AudioDevice):
         'help':'initial gain factor (default %(default)s)'})
     
     
-   
-                
-                
-    async def inputstream_generator(self, channels=1, **kwargs):
-        """Generator that yields blocks of input data as NumPy arrays."""
-        q_in = asyncio.Queue()
-        
-        loop = asyncio.get_event_loop()
-        def callback(indata, frame_count, time_info, status):
-            loop.call_soon_threadsafe(q_in.put_nowait, (indata.copy(), status))
-            
-        stream = sd.InputStream(callback=callback, channels=channels, **kwargs)
-        with stream:
-            while True:
-                indata, status = await q_in.get()
-                yield indata, status
-                
-        
-    async def record_buffer(self, buffer, **kwargs):
-        loop = asyncio.get_event_loop()
-        event = asyncio.Event()
-        idx = 0
-        
-        def callback(indata, frame_count, time_info, status):
-            nonlocal idx
-            if status:
-                print(status)
-            remainder = len(buffer) - idx
-            if remainder == 0:
-                loop.call_soon_threadsafe(event.set)
-                raise sd.CallbackStop
-            indata = indata[:remainder]
-            buffer[idx:idx + len(indata)] = indata
-            idx += len(indata)
-            
-        stream = sd.InputStream(callback=callback, dtype=buffer.dtype,
-                                channels=buffer.shape[1], **kwargs)
-        with stream:
-            await event.wait()
-            
-            
+
     
-    async def buffer_analysis_and_plot(self, buffersize, channels = 1,
-                                       dtype=np.int16,**kwargs):
-        loop = asyncio.get_event_loop()
-        event = asyncio.Event()
-        global buffer
-        buffer = np.empty((buffersize, channels), dtype=dtype)
-        await self.record_buffer(buffer)
-        
-        
-        
+                
+                
     
-    def run_buffer(self, buffersize, **kwargs):
-        loop = asyncio.get_event_loop()
-        event = asyncio.Event()
-        loop.run_until_complete(self.buffer_analysis_and_plot(buffersize))
-        return buffer
     
     
 def butter_lowpass_filter(data, cutoff, fs, order, Xf):
