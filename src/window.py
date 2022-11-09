@@ -53,10 +53,10 @@ class AppWindow(Gtk.ApplicationWindow):
     
     @Gtk.Template.Callback()  
     def on_AppWindow_destroy(self, widget, *args):
+
+        self.dataAq_process.terminate()
         Gtk.main_quit()
-        self.event.set()
-        #self.p1.terminate()
-        self.thrd1.join()
+        
 
         pass
     

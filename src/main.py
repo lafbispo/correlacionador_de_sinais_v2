@@ -45,7 +45,6 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE, 
                          **kwargs)     
         
-        global freq, Pxx_dendb, rms_value
        
         pass       
     
@@ -91,6 +90,7 @@ class Analisador_de_sinaisApplication(Gtk.Application):
             win = AppWindow(application=self, title = 'Analisador de Sinais')         
         # -------------------------------------------    
         
+        GLib.idle_add(self.plotStreamProcess, win)
                    
         #FIM -------------------------------
         win.present()         
@@ -101,23 +101,45 @@ class Analisador_de_sinaisApplication(Gtk.Application):
     def plotStreamProcess(self, win):
 
         qRms = multiprocessing.Queue()
+        qPSD = multiprocessing.Queue()
+        qFreq = multiprocessing.Queue()
 
         #cria psd plot area
         figPSD, axisPSD = self.embedded_plot(win.drawingArea_PSDplot)  
         self.aplica_psd_plot_settings(figPSD, axisPSD) 
 
+        line1,  = axisPSD.semilogx(np.ones(10), label = 'ch1')
 
-        win.event = threading.Event()
-        win.thrd1 = threading.Thread(target=self.up_stream, args=(win.event,))
-        win.thrd1.start()
+        win.dataAq_process = multiprocessing.Process(target=self.up_stream, args=(
+            qRms, qPSD, qFreq,  win.event))
 
-        for i in range(5):
-            time.sleep(1)
-            axisPSD.plot(freq, Pxx_dendb)
-        
+        win.dataAq_process.start()
 
+        # line1.set_xdata(qFreq.get())
 
+        # def updateplot():
 
+        #     for i in range(10):
+
+        #         print(i)
+
+        #         try:
+        #             y = qPSD.get()
+        #             x = qFreq.get()
+        #             line1.set_ydata(y[1:])
+        #             line1.set_xdata(x[1:])
+        #             figPSD.canvas.draw_idle()
+        #             figPSD.canvas.flush_events()
+        #             time.sleep(.3)
+                
+        #         except:
+        #             print('empty')
+        #             time.sleep(.3)                   
+
+        #     pass
+
+        # updateplot()
+       
 
         pass
 
@@ -180,7 +202,7 @@ class Analisador_de_sinaisApplication(Gtk.Application):
         return False
 
     
-    def up_stream(self, event):
+    def up_stream(self, qRms, qPSD, qFreq, event):
 
         channels = self.audiostream.channels
         device = self.audiostream.device
@@ -192,8 +214,6 @@ class Analisador_de_sinaisApplication(Gtk.Application):
         blocksizeM = int(1024)                
         q = queue.Queue()
         qcalc = deque()
-
-        global freq, Pxx_dendb, rms_value
 
         def audio_callback(indata, frames, time, status):
             """This is called (from a separate thread) for each audio block."""
@@ -208,12 +228,12 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                 blocksize=0, dtype=np.int16)
 
         with stream:
-            while True:
-                if event.is_set():
-                    return False
-                
-                data = q.get()
-                qcalc.extend(data)
+            while True:              
+                try:
+                    data = q.get()
+                    qcalc.extend(data)                    
+                except queue.Empty:
+                    break
 
                 if len(qcalc)<blocksize:
 
@@ -231,7 +251,10 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                         average='mean') 
         
                     Pxx_dendb = 10*np.log10(Pxx_den)            
-                    rms_value = np.sqrt(sum(buffer[:]**2)/len(buffer[:]))  
+                    rms_value = np.sqrt(sum(buffer[:]**2)/len(buffer[:])) 
+                    qFreq.put(freq) 
+                    qPSD.put(Pxx_dendb)
+                    qRms.put(rms_value)
                     
 
 
