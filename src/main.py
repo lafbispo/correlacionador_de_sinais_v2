@@ -279,8 +279,6 @@ class Analisador_de_sinaisApplication(Gtk.Application):
                 line2.set_visible(True)
                 pass
             
-            
-            
             freq, Pxx_den = welch(buffer, fs=fs, window='blackman', nperseg=blocksizeM, 
                         noverlap=None, nfft=None, detrend='constant', 
                         return_onesided=True, scaling='density', axis=- 1, 
@@ -291,9 +289,6 @@ class Analisador_de_sinaisApplication(Gtk.Application):
             rms_value = np.sqrt(sum(buffer[0,:]**2)/len(buffer[0,:]))                                        
             RMS_levelBar.set_value(rms_value)       
         
-        
-            
-            
             fig.canvas.restore_region(bg) 
             line1.set_ydata(Pxx_dendb[0,1:])
             line1.set_xdata(freq[1:])  

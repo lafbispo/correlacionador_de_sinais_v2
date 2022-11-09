@@ -22,7 +22,7 @@ import time
 import sounddevice as sd
 
 
-@Gtk.Template.from_file("./src/window.glade")
+@Gtk.Template.from_file("window.glade")
 class AppWindow(Gtk.ApplicationWindow):
     __gtype_name__ = 'AppWindow'
     
